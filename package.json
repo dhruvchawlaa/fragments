@@ -11,5 +11,8 @@
     "url": "git+https://github.com/dhruvchawlaa/fragments.git"
   },
   "author": "Dhruv Chawla",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "prettier": "3.2.5"
+  }
 }
