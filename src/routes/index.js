@@ -4,7 +4,7 @@ const { createSuccessResponse } = require('../response'); // Import the response
 // version and author from package.json
 const { version, author } = require('../../package.json');
 
-// Create a router that we can use to mount our API
+// A router that we can use to mount our API
 const router = express.Router();
 
 // Our authentication middleware
