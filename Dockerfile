@@ -1,7 +1,5 @@
-# This Dockerfile is used to build a Docker image for the fragments microservice.
-
-FROM node:20.9.0
-
+# Stage 1: Build the application
+FROM node:20.9.0 AS builder
 LABEL maintainer="Dhruv Chawla <dchawla3@myseneca.ca>"
 LABEL description="Fragments node.js microservice"
 
@@ -30,6 +28,13 @@ COPY ./src ./src
 
 # Copy our HTPASSWD file
 COPY ./tests/.htpasswd ./tests/.htpasswd
+
+# Stage 2: Create the runtime image
+FROM node:20.9.0
+WORKDIR /app
+
+# Copy the build artifacts from the builder stage
+COPY --from=builder /app .
 
 # Start the container by running our server
 CMD npm start
