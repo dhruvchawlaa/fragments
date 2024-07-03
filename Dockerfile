@@ -1,43 +1,55 @@
-# Stage 1: Build the application
-FROM node:20.9.0 AS builder
+#############################################################################################################################
+# Stage 0: Install the base dependencies
+FROM node:20-alpine@sha256:df01469346db2bf1cfc1f7261aeab86b2960efa840fe2bd46d83ff339f463665 AS dependencies
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the package.json and package-lock.json files to /app
+COPY package*.json /app/
+
+# Install node dependencies defined in package-lock.json (For production)
+RUN npm ci --production
+
+##############################################################################################################################
+# Stage 1: Copy required files and deploy
+FROM node:20-alpine@sha256:df01469346db2bf1cfc1f7261aeab86b2960efa840fe2bd46d83ff339f463665 AS build
+
 LABEL maintainer="Dhruv Chawla <dchawla3@myseneca.ca>"
 LABEL description="Fragments node.js microservice"
 
-# We default to use port 8080 in our service
-ENV PORT=8080
+USER root
 
-# Reduce npm spam when installing within Docker
-# https://docs.npmjs.com/cli/v8/using-npm/config#loglevel
-ENV NPM_CONFIG_LOGLEVEL=warn
+# Set environment variables and disable npm colors and verbose logs
+ENV PORT=8080 \
+    NPM_CONFIG_LOGLEVEL=warn \
+    NPM_CONFIG_COLOR=false \
+    NODE_ENV=production
 
-# Disable colour when run inside Docker
-# https://docs.npmjs.com/cli/v8/using-npm/config#color
-ENV NPM_CONFIG_COLOR=false
-
-# Use /app as our working directory
+# Set the working directory to /app
 WORKDIR /app
 
-# Copy package.json and package-lock.json files to the working directory
-COPY package.json package-lock.json ./
+# Copy the generated dependencies 
+COPY --from=dependencies /app /app
 
-# Install node dependencies defined in package-lock.json
-RUN npm install
+# Copy the source code to /app/src/
+COPY --chown=node:node ./src ./src
 
-# Copy src to /app/src/
-COPY ./src ./src
-
-# Copy our HTPASSWD file
+# Copy the HTPASSWD file for authentication
 COPY ./tests/.htpasswd ./tests/.htpasswd
 
-# Stage 2: Create the runtime image
-FROM node:20.9.0
-WORKDIR /app
+# Install curl for the health check
+RUN apk update && apk add curl
 
-# Copy the build artifacts from the builder stage
-COPY --from=builder /app .
+# Switch to the node user
+USER node
 
-# Start the container by running our server
+# Start the server when the container starts
 CMD npm start
 
-# We run our service on port 8080
+# Expose port 8080
 EXPOSE 8080
+
+# Add a health check to ensure the service is running
+HEALTHCHECK --interval=15s --timeout=30s --start-period=10s --retries=3 \
+  CMD curl --fail localhost:8080 || exit 1
