@@ -39,17 +39,17 @@ COPY --chown=node:node ./src ./src
 COPY ./tests/.htpasswd ./tests/.htpasswd
 
 # Install curl for the health check
-RUN apk update && apk add curl
+RUN apk add --no-cache curl=8.8.0-r0
 
 # Switch to the node user
 USER node
 
 # Start the server when the container starts
-CMD npm start
+CMD ["npm", "start"]
 
 # Expose port 8080
 EXPOSE 8080
 
 # Add a health check to ensure the service is running
 HEALTHCHECK --interval=15s --timeout=30s --start-period=10s --retries=3 \
-  CMD curl --fail localhost:8080 || exit 1
+  CMD curl --fail http://localhost:8080 || exit 1
