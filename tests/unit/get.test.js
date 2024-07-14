@@ -34,7 +34,7 @@ describe('GET /v1/fragments/', () => {
 
   // New Tests
   test('should handle query parameter "expand" correctly', async () => {
-    const res = await request(app)
+    await request(app)
       .post('/v1/fragments')
       .auth('user1@email.com', 'password1')
       .set('Content-Type', 'text/plain')
