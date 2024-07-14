@@ -53,8 +53,15 @@ class Fragment {
     return writeFragment(this);
   }
 
-  async getData() {
-    return readFragmentData(this.ownerId, this.id);
+  async getData(extension = null) {
+    const data = await readFragmentData(this.ownerId, this.id);
+
+    if (extension === 'html' && this.type === 'text/markdown') {
+      const markdownIt = require('markdown-it')();
+      return Buffer.from(markdownIt.render(data.toString()));
+    }
+
+    return data;
   }
 
   async setData(data) {
@@ -77,7 +84,19 @@ class Fragment {
   }
 
   get formats() {
+    if (this.mimeType === 'text/markdown') {
+      return ['md', 'html', 'txt'];
+    }
     return [this.mimeType];
+  }
+
+  getMimeType(extension) {
+    const mimeTypes = {
+      html: 'text/html',
+      txt: 'text/plain',
+      md: 'text/markdown',
+    };
+    return mimeTypes[extension] || this.mimeType;
   }
 
   static isSupportedType(value) {

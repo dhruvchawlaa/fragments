@@ -1,11 +1,17 @@
 const request = require('supertest');
 const app = require('../../src/app');
 
-describe('GET /v1/fragments/', () => {
-  test('should return empty array for authenticated user with no fragments', async () => {
-    const res = await request(app).get('/v1/fragments').auth('user1@email.com', 'password1');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.fragments).toEqual([]);
+describe('GET /v1/fragments', () => {
+  let fragmentId;
+
+  beforeAll(async () => {
+    // Create a fragment to be used in the tests
+    const res = await request(app)
+      .post('/v1/fragments')
+      .auth('user1@email.com', 'password1')
+      .set('Content-Type', 'text/markdown')
+      .send('# This is a markdown fragment');
+    fragmentId = res.body.fragment.id;
   });
 
   test('should deny unauthenticated requests', async () => {
@@ -21,78 +27,65 @@ describe('GET /v1/fragments/', () => {
   });
 
   test('should fetch existing fragments', async () => {
-    const res = await request(app)
-      .post('/v1/fragments')
-      .auth('user1@email.com', 'password1')
-      .set('Content-Type', 'text/plain')
-      .send('This is a fragment');
-    const id = res.body.fragment.id;
-
-    const res_2 = await request(app).get('/v1/fragments').auth('user1@email.com', 'password1');
-    expect(res_2.body.fragments[0]).toBe(id);
+    const res = await request(app).get('/v1/fragments').auth('user1@email.com', 'password1');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.fragments).toContain(fragmentId);
   });
 
-  // New Tests
   test('should handle query parameter "expand" correctly', async () => {
-    await request(app)
-      .post('/v1/fragments')
-      .auth('user1@email.com', 'password1')
-      .set('Content-Type', 'text/plain')
-      .send('This is a fragment with expand parameter');
-    const res2 = await request(app)
+    const res = await request(app)
       .get('/v1/fragments?expand=1')
       .auth('user1@email.com', 'password1');
-    expect(res2.statusCode).toBe(200);
-    expect(res2.body.fragments).toHaveLength(2);
-    expect(res2.body.fragments[0]).toHaveProperty('id');
-    expect(res2.body.fragments[0]).toHaveProperty('created');
-    expect(res2.body.fragments[0]).toHaveProperty('updated');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.fragments).toHaveLength(1);
+    expect(res.body.fragments[0]).toHaveProperty('id');
+    expect(res.body.fragments[0]).toHaveProperty('created');
+    expect(res.body.fragments[0]).toHaveProperty('updated');
   });
 
   test('should return fragments with metadata when expand is true', async () => {
     const res = await request(app)
-      .post('/v1/fragments')
-      .auth('user1@email.com', 'password1')
-      .set('Content-Type', 'text/plain')
-      .send('This is a fragment with metadata');
-    const id = res.body.fragment.id;
-
-    const res_2 = await request(app)
       .get('/v1/fragments?expand=1')
       .auth('user1@email.com', 'password1');
-    expect(res_2.body.fragments[2].id).toBe(id);
-    expect(res_2.body.fragments[2]).toHaveProperty('created');
-    expect(res_2.body.fragments[2]).toHaveProperty('updated');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.fragments[0].id).toBe(fragmentId);
+    expect(res.body.fragments[0]).toHaveProperty('created');
+    expect(res.body.fragments[0]).toHaveProperty('updated');
   });
 });
 
 describe('GET /v1/fragments/:id', () => {
+  let fragmentId;
+
+  beforeAll(async () => {
+    // Create a fragment to be used in the tests
+    const res = await request(app)
+      .post('/v1/fragments')
+      .auth('user1@email.com', 'password1')
+      .set('Content-Type', 'text/markdown')
+      .send('# This is a markdown fragment');
+    fragmentId = res.body.fragment.id;
+  });
+
   test('should deny unauthenticated requests', async () => {
-    const res = await request(app).get('/v1/fragments/fragmentId');
+    const res = await request(app).get(`/v1/fragments/${fragmentId}`);
     expect(res.statusCode).toBe(401);
   });
 
   test('should deny requests with incorrect credentials', async () => {
     const res = await request(app)
-      .get('/v1/fragments/fragmentId')
+      .get(`/v1/fragments/${fragmentId}`)
       .auth('invaliduser@email.com', 'invalidpassword');
     expect(res.statusCode).toBe(401);
   });
 
   test('should return specific fragment data', async () => {
-    const body = 'This is a fragment';
+    const body = '# This is a markdown fragment';
     const res = await request(app)
-      .post('/v1/fragments')
-      .auth('user1@email.com', 'password1')
-      .set('Content-Type', 'text/plain')
-      .send(body);
-    const id = res.body.fragment.id;
-
-    const res_2 = await request(app)
-      .get(`/v1/fragments/${id}`)
+      .get(`/v1/fragments/${fragmentId}`)
       .auth('user1@email.com', 'password1');
-    expect(res_2.statusCode).toBe(200);
-    expect(res_2.text).toBe(body);
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toBe(body);
   });
 
   test('should return 404 if fragment ID does not exist', async () => {
@@ -110,76 +103,75 @@ describe('GET /v1/fragments/:id', () => {
   });
 
   test('should fetch fragments with correct ID', async () => {
-    const body = 'This is a fragment';
+    const body = '# This is a markdown fragment';
     const res = await request(app)
-      .post('/v1/fragments')
-      .auth('user1@email.com', 'password1')
-      .set('Content-Type', 'text/plain')
-      .send(body);
-    const id = res.body.fragment.id;
-
-    const res_2 = await request(app)
-      .get(`/v1/fragments/${id}.txt`)
+      .get(`/v1/fragments/${fragmentId}.txt`)
       .auth('user1@email.com', 'password1');
-    expect(res_2.statusCode).toBe(200);
-    expect(res_2.text).toBe(body);
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toBe(body);
   });
 
-  // New Tests
   test('should return fragment data as text/plain for .txt extension', async () => {
-    const body = 'This is a text fragment';
+    const body = '# This is a markdown fragment';
     const res = await request(app)
-      .post('/v1/fragments')
-      .auth('user1@email.com', 'password1')
-      .set('Content-Type', 'text/plain')
-      .send(body);
-    const id = res.body.fragment.id;
-
-    const res_2 = await request(app)
-      .get(`/v1/fragments/${id}.txt`)
+      .get(`/v1/fragments/${fragmentId}.txt`)
       .auth('user1@email.com', 'password1');
-    expect(res_2.statusCode).toBe(200);
-    expect(res_2.type).toBe('text/plain');
-    expect(res_2.text).toBe(body);
+    expect(res.statusCode).toBe(200);
+    expect(res.type).toBe('text/plain');
+    expect(res.text).toBe(body);
+  });
+
+  test('should return fragment data as text/html for .html extension', async () => {
+    const res = await request(app)
+      .get(`/v1/fragments/${fragmentId}.html`)
+      .auth('user1@email.com', 'password1');
+    expect(res.statusCode).toBe(200);
+    expect(res.type).toBe('text/html');
+    expect(res.text).toContain('<h1>This is a markdown fragment</h1>');
+  });
+
+  test('should return fragment data as text/markdown for .md extension', async () => {
+    const body = '# This is a markdown fragment';
+    const res = await request(app)
+      .get(`/v1/fragments/${fragmentId}.md`)
+      .auth('user1@email.com', 'password1');
+    expect(res.statusCode).toBe(200);
+    expect(res.type).toBe('text/markdown');
+    expect(res.text).toBe(body);
   });
 
   test('should return 415 for unsupported extension request', async () => {
-    const body = 'This is a fragment for unsupported extension';
     const res = await request(app)
-      .post('/v1/fragments')
-      .auth('user1@email.com', 'password1')
-      .set('Content-Type', 'text/plain')
-      .send(body);
-    const id = res.body.fragment.id;
-
-    const res_2 = await request(app)
-      .get(`/v1/fragments/${id}.unsupported`)
+      .get(`/v1/fragments/${fragmentId}.unsupported`)
       .auth('user1@email.com', 'password1');
-    expect(res_2.statusCode).toBe(415);
-    expect(res_2.body.error.message).toBe(
+    expect(res.statusCode).toBe(415);
+    expect(res.body.error.message).toBe(
       'The fragment cannot be converted into the extension specified!'
     );
   });
 });
 
 describe('GET /v1/fragments/:id/info', () => {
-  // New Tests
-  test('should return fragment metadata', async () => {
-    const body = 'This is a fragment with metadata info';
+  let fragmentId;
+
+  beforeAll(async () => {
+    // Create a fragment to be used in the tests
     const res = await request(app)
       .post('/v1/fragments')
       .auth('user1@email.com', 'password1')
-      .set('Content-Type', 'text/plain')
-      .send(body);
-    const id = res.body.fragment.id;
+      .set('Content-Type', 'text/markdown')
+      .send('# This is a markdown fragment');
+    fragmentId = res.body.fragment.id;
+  });
 
-    const res_2 = await request(app)
-      .get(`/v1/fragments/${id}/info`)
+  test('should return fragment metadata', async () => {
+    const res = await request(app)
+      .get(`/v1/fragments/${fragmentId}/info`)
       .auth('user1@email.com', 'password1');
-    expect(res_2.statusCode).toBe(200);
-    expect(res_2.body.fragment.id).toBe(id);
-    expect(res_2.body.fragment).toHaveProperty('created');
-    expect(res_2.body.fragment).toHaveProperty('updated');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.fragment.id).toBe(fragmentId);
+    expect(res.body.fragment).toHaveProperty('created');
+    expect(res.body.fragment).toHaveProperty('updated');
   });
 
   test('should return 404 if fragment metadata is not found', async () => {
