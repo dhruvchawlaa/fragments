@@ -61,6 +61,10 @@ class Fragment {
       return Buffer.from(markdownIt.render(data.toString()));
     }
 
+    if (extension && !this.formats.includes(extension)) {
+      throw new Error('Unsupported extension');
+    }
+
     return data;
   }
 

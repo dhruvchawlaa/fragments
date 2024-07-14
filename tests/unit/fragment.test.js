@@ -6,17 +6,8 @@ const wait = async (ms = 10) => new Promise((resolve) => setTimeout(resolve, ms)
 
 const validTypes = [
   `text/plain`,
-  /*
-   Currently, only text/plain is supported. Others will be added later.
-
   `text/markdown`,
-  `text/html`,
-  `application/json`,
-  `image/png`,
-  `image/jpeg`,
-  `image/webp`,
-  `image/gif`,
-  */
+  // Other types will be added as needed.
 ];
 
 describe('Fragment class', () => {
@@ -168,6 +159,15 @@ describe('Fragment class', () => {
       });
       expect(fragment.formats).toEqual(['text/plain']);
     });
+
+    test('formats returns the expected result for markdown', () => {
+      const fragment = new Fragment({
+        ownerId: '1234',
+        type: 'text/markdown',
+        size: 0,
+      });
+      expect(fragment.formats).toEqual(['md', 'html', 'txt']);
+    });
   });
 
   describe('save(), getData(), setData(), byId(), byUser(), delete()', () => {
@@ -252,6 +252,45 @@ describe('Fragment class', () => {
 
       await Fragment.delete('1234', fragment.id);
       expect(() => Fragment.byId('1234', fragment.id)).rejects.toThrow();
+    });
+
+    test('getData() converts Markdown to HTML', async () => {
+      const markdown = Buffer.from('# Hello World');
+      const fragment = new Fragment({ ownerId: '1234', type: 'text/markdown', size: 0 });
+      await fragment.save();
+      await fragment.setData(markdown);
+
+      const htmlData = await fragment.getData('html');
+      expect(htmlData.toString()).toBe('<h1>Hello World</h1>\n');
+    });
+
+    test('getData() returns original Markdown data', async () => {
+      const markdown = Buffer.from('# Hello World');
+      const fragment = new Fragment({ ownerId: '1234', type: 'text/markdown', size: 0 });
+      await fragment.save();
+      await fragment.setData(markdown);
+
+      const markdownData = await fragment.getData('md');
+      expect(markdownData.toString()).toBe('# Hello World');
+    });
+
+    test('getData() returns plain text for .txt extension', async () => {
+      const markdown = Buffer.from('# Hello World');
+      const fragment = new Fragment({ ownerId: '1234', type: 'text/markdown', size: 0 });
+      await fragment.save();
+      await fragment.setData(markdown);
+
+      const textData = await fragment.getData('txt');
+      expect(textData.toString()).toBe('# Hello World');
+    });
+
+    test('getData() throws for unsupported extension', async () => {
+      const markdown = Buffer.from('# Hello World');
+      const fragment = new Fragment({ ownerId: '1234', type: 'text/markdown', size: 0 });
+      await fragment.save();
+      await fragment.setData(markdown);
+
+      await expect(fragment.getData('unsupported')).rejects.toThrow();
     });
   });
 });
