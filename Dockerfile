@@ -41,11 +41,8 @@ COPY ./tests/.htpasswd ./tests/.htpasswd
 # Install curl for the health check
 RUN apk add --no-cache curl=8.9.0-r0
 
-# Switch to the node user
-USER node
-
 # Start the server when the container starts
-CMD ["npm", "start"]
+CMD ["node", "src/index.js"]
 
 # Expose port 8080
 EXPOSE 8080
