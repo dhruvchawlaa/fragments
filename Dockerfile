@@ -18,8 +18,6 @@ FROM node:20-alpine@sha256:df01469346db2bf1cfc1f7261aeab86b2960efa840fe2bd46d83f
 LABEL maintainer="Dhruv Chawla <dchawla3@myseneca.ca>"
 LABEL description="Fragments node.js microservice"
 
-USER root
-
 # Set environment variables and disable npm colors and verbose logs
 ENV PORT=8080 \
     NPM_CONFIG_LOGLEVEL=warn \
