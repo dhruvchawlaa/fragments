@@ -1,0 +1,95 @@
+{
+  "taskDefinitionArn": "arn:aws:ecs:us-east-1:912051710075:task-definition/fragments-task:3",
+  "containerDefinitions": [
+    {
+      "name": "fragments-container",
+      "image": "dhruvchawlaa/fragments:latest",
+      "cpu": 256,
+      "memoryReservation": 512,
+      "portMappings": [
+        {
+          "name": "fragments-container-80-tcp",
+          "containerPort": 80,
+          "hostPort": 80,
+          "protocol": "tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "API_URL",
+          "value": "http://localhost:8080"
+        },
+        {
+          "name": "PORT",
+          "value": "80"
+        },
+        {
+          "name": "HTPASSWD_FILE",
+          "value": "tests/.htpasswd"
+        }
+      ],
+      "environmentFiles": [],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "ulimits": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/fragments-task",
+          "awslogs-create-group": "true",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        },
+        "secretOptions": []
+      },
+      "systemControls": []
+    }
+  ],
+  "family": "fragments-task",
+  "taskRoleArn": "arn:aws:iam::912051710075:role/LabRole",
+  "executionRoleArn": "arn:aws:iam::912051710075:role/LabRole",
+  "networkMode": "awsvpc",
+  "revision": 3,
+  "volumes": [],
+  "status": "ACTIVE",
+  "requiresAttributes": [
+    {
+      "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+    },
+    {
+      "name": "ecs.capability.execution-role-awslogs"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.21"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.task-iam-role"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+    },
+    {
+      "name": "ecs.capability.task-eni"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+    }
+  ],
+  "placementConstraints": [],
+  "compatibilities": ["EC2", "FARGATE"],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "registeredAt": "2024-07-28T06:50:41.417Z",
+  "registeredBy": "arn:aws:sts::912051710075:assumed-role/voclabs/user3282295=dchawla3@myseneca.ca",
+  "tags": []
+}
