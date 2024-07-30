@@ -28,6 +28,10 @@
         {
           "name": "HTPASSWD_FILE",
           "value": "tests/.htpasswd"
+        },
+        {
+          "name": "AWS_S3_BUCKET_NAME",
+          "value": "dchawla3-fragments"
         }
       ],
       "environmentFiles": [],
