@@ -90,6 +90,8 @@ class Fragment {
   get formats() {
     if (this.mimeType === 'text/markdown') {
       return ['md', 'html', 'txt'];
+    } else if (this.mimeType.startsWith('image/')) {
+      return this.mimeType.split('/')[1]; // Return the extension based on MIME type
     }
     return [this.mimeType];
   }
@@ -99,6 +101,12 @@ class Fragment {
       html: 'text/html',
       txt: 'text/plain',
       md: 'text/markdown',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      avif: 'image/avif',
     };
     return mimeTypes[extension] || this.mimeType;
   }
@@ -113,6 +121,11 @@ class Fragment {
       'text/csv',
       'application/json',
       'application/yaml',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/avif',
     ].includes(type);
   }
 }
