@@ -1,7 +1,6 @@
 const { createSuccessResponse, createErrorResponse } = require('../../response');
 const { Fragment } = require('../../model/fragment');
 const logger = require('../../logger');
-const markdownIt = require('markdown-it')();
 
 const getFragments = async (req, res) => {
   logger.debug('Received request to GET /v1/fragments');
@@ -53,46 +52,22 @@ const getFragmentByID = async (req, res) => {
   }
 
   try {
-    const fragmentData = await fragment.getData();
+    const contentType = extension ? fragment.getMimeType(extension) : fragment.mimeType;
+    const fragmentData = extension ? await fragment.convertTo(extension) : await fragment.getData();
 
-    if (extension) {
-      if (extension === 'txt') {
-        logger.debug('Extension is .txt, fetching fragment data as text');
-        res.status(200).type('text/plain').send(fragmentData);
-        logger.info('Fragment data sent as text/plain');
-        return;
-      }
-
-      if (extension === 'html' && fragment.type === 'text/markdown') {
-        logger.debug('Converting Markdown to HTML');
-        const htmlData = markdownIt.render(fragmentData.toString());
-        res.status(200).type('text/html').send(htmlData);
-        logger.info('Fragment data sent as text/html');
-        return;
-      }
-
-      if (extension === 'md' && fragment.type === 'text/markdown') {
-        logger.debug('Returning Markdown data');
-        res.status(200).type('text/markdown').send(fragmentData);
-        logger.info('Fragment data sent as text/markdown');
-        return;
-      }
-
-      logger.warn({ extension }, 'Unsupported extension requested');
+    res.status(200).type(contentType).send(fragmentData);
+    logger.info('Fragment data sent with converted MIME type');
+  } catch (error) {
+    if (error.message === 'Unsupported extension' || error.message === 'Unsupported conversion') {
       res
         .status(415)
         .json(
           createErrorResponse(415, 'The fragment cannot be converted into the extension specified!')
         );
-      logger.warn('Response sent with status 415 for unsupported extension');
-      return;
+    } else {
+      logger.error({ error }, 'Error converting fragment data');
+      res.status(500).json(createErrorResponse(500, 'Internal server error'));
     }
-
-    res.status(200).type(fragment.mimeType).send(fragmentData);
-    logger.info('Fragment data sent with original MIME type');
-  } catch (error) {
-    logger.error({ error }, 'Error retrieving fragment data');
-    res.status(500).json(createErrorResponse(500, 'Internal server error'));
   }
 };
 
